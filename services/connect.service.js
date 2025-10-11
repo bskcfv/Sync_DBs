@@ -84,7 +84,7 @@ export const importForeignTable = async(Table) =>{
 }
 
 //Servicio Clonar Tabla a DB Local
-//Le Daremos El mismo Nombre a la tabla Local en base a la tabla deploy
+//Le Daremos el nombre 'tablename_loca' para evitar conflictos
 export const cloneTable = async(TableName) => {
     try {
         await poolLocal.query(
@@ -126,7 +126,7 @@ export const altertablename = async(TableName) => {
     }
 }
 
-//Servicio de Dropear Conexion Completa
+//Servicio de Eliminar Conexion Completa
 export const DropCon = async() => {
     try {
         await poolLocal.query(

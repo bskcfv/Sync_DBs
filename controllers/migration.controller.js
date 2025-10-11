@@ -1,14 +1,14 @@
-import { getDeployTables, getLocalTables, DropTable, cleanTable } from "../services/migration.service.js";
+import { getDeployTables, getLocalTables, DropTable, prepareTable, AlterTableNameLocal } from "../services/migration.service.js";
 import { importForeignTable, cloneTable, dropForeignTable, altertablename } from "../services/connect.service.js";
 
 export const migration = {
     /*
-        Objetivo -> Eliminar Tablas de la Base de Datos Local que no sean Coincidentes con las tablas en Deploy
-            1. Obtener Nombres de las tablas Locales
-            2. Obtener Nombres de las tablas Deploy
-            3. Recorrer Cada 'TableName' de la Base de datos local
-            4. Verificar Cuales No Coinciden y Eliminarlas
-        */
+    Objetivo -> Eliminar Tablas de la Base de Datos Local que no sean Coincidentes con las tablas en Deploy
+        1. Obtener Nombres de las tablas Locales
+        2. Obtener Nombres de las tablas Deploy
+        3. Recorrer Cada 'TableName' de la Base de datos local
+        4. Verificar Cuales No Coinciden y Eliminarlas
+    */
     CleanSchema : async() => {
         try {
             //Servicio de Obtencion de Nombres de las Tablas Locales
@@ -64,7 +64,19 @@ export const migration = {
         } 
     },
     /*
-    Objetivo -> Limpiar las Tablas Locales
+    Objetivo -> Despues de Limpiar las tablas (TRUNCATE), Insertar Toda la data (Con Cambios Sí Hubo) al Iniciar el Servidor
+        **Al ejecutar Este proceso, las tablas ya están sincronizadas**
+        1. Obtener el Nombre de las tablas Locales 
+        2. Recorrer el nombre de cada tabla
+        3. Alterar el Nombre de la tabla local, para evitar conflictos con la tabla Foranea
+        4. Importar la tabla foranea
+        5. Servicio prepareTable():
+            - Inicia la transaccion
+            - Limpiar (TRUNCATE) la tabla
+            - Insertar los datos de la tabla foranea en la tabla local
+            - Cerrar la Transaccion
+        6. Eliminar la tabla foranea
+        7. Resturar el Nombre de la tabla Local
     */
     prepareTables : async() =>{
         try {
@@ -72,26 +84,24 @@ export const migration = {
             const tables = await getLocalTables();
             //Recorrer Cada Fila Con el Nombre de la Respectiva Tabla
             tables.forEach(async(table) => {
-                //Obtener el nombre de la Tabla en Formato String
-                const tablename = JSON.stringify(table.tablename)
-                //Visualizar en Consola
-                console.log(`Tabla ${tablename} Localizada`);
-                //Servicio de Limpiar Data de las DB Localizadas
-                await cleanTable(tablename)
+                //Servicio de Pasar los Nombres 'tablename' a 'tablename_local' para evitar conflictos
+                await AlterTableNameLocal(table.tablename)
+                //Servicio de Importar las tablas en Deploy (CREAR FOREIGN TABLE)
+                await importForeignTable(table.tablename)
+                //Servicio de Actualizacion de datos
+                await prepareTable(table.tablename)
+                //Servicio de Eliminar FOREIGN TABLE
+                await dropForeignTable(table.tablename)
+                //Servicio de restaurar los nombres: 'tablename_local' -> 'tablename'
+                await altertablename(table.tablename)
             });
             //Retornar Mensaje de Proceso Exitoso
-            return console.log("Limpieza Exitosa")
+            return console.log("Datos Preparados Y Actualizados")
         } catch (error) {
-            return console.log(error)
+            return console.log(`Error en migration.prepareTables: ${error}`)
         }
     },
-    getDatav2 : async() => {
-        try {
-            
-        } catch (error) {
-            console.log(`Error en migration.getDataV2: ${error}`)
-        }
-    },
+    /* Controlador en Cuarentena -_- No se Acerque Porfavor */
     getData : async() =>{
         try {
             //Servicio de Obtener Nombre de las Tablas

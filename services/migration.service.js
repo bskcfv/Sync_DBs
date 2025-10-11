@@ -23,12 +23,48 @@ export const getLocalTables = async() =>{
     return result.rows;
 }
 
-//Servicio de Limpieza de Tablas Local
-export const cleanTable = async(TableName) => {
-    const result = poolLocal.query(
-        `TRUNCATE TABLE ${TableName};`,
-    );
-    return console.log(`Tabla ${TableName} ha sido Limpiada`);
+//Servicio de Alterar Nombre de tablas: tablename --> tablename_local
+export const AlterTableNameLocal = async(TableName) => {
+    try {
+        await poolLocal.query(
+            `
+            ALTER TABLE ${TableName}
+            RENAME TO ${TableName}_local;
+            `
+        )
+        return console.log(`El Nombre de la Tabla ha sido Actualizado por: ${TableName}_local`)
+    } catch (error) {
+        console.log(`Error en AlterTableNameLocal: ${error}`)
+    }
+}
+
+//Servicio de Actualizacion de datos dentro de las Tablas Local
+export const prepareTable = async(TableName) => {
+    try {
+        //Inicializar Transsacion
+        await poolLocal.query('BEGIN;')
+        //Limpiar Tablas que finalicen en '_local'
+        await poolLocal.query(
+            `TRUNCATE TABLE ${TableName}_local;`
+        )
+        //Insertar Datos desde la Tabla Foranea hasta la tabla local
+        await poolLocal.query(
+            `
+            INSERT INTO ${TableName}_local
+            SELECT * FROM ${TableName};
+            `,
+        );
+        //Terminar Transaccion
+        await poolLocal.query('COMMIT;')
+        //Retornar Respuesta
+        return console.log(`Tabla ${TableName} ha sido Actualizada`);
+    } catch (error) {
+        //Ejecutar ROLLBACK Sí hubo algun error
+        await poolLocal.query(
+            "ROLLBACK;"
+        )
+        return console.log(`Rollback de Prevencion Ejecutado, Error: ${error}`)
+    }
 }
 
 //Servicio de Eliminacion de Tablas No Coincidentes

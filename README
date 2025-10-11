@@ -2,30 +2,69 @@ Proceso de Config:
     - npm init -y
     - npm install express nodemon pg dotenv
 
+
 Configuracion de Variables de Entorno (.env):
+    #Variables de Conexion a Db Local
     - user = tu_usuario
     - password = tu_password
     - host = tu_host (por default localhost)
     - port = tu_port (Por default 5432)
     - db_local = tu_db_local
+    - db_schema = tu_schema (Por default es **public**)
+    #URL para Conexion Directa con la DB en Deploy
     - db_url = tu_db_en_deploy
+    #Variables de Conexion a DB Deploy
+    - db_d_host = tu_host_deploy
+    - db_d_dbname= tu_db_deploy
+    - db_d_port = tu_port_deploy
+    - db_d_user = tu_user_deploy
+    - db_d_password = tu_password_deploy
+    - db_d_schema = tu_schema (Por default es **public**)
+
+
+Añadir en package.json:
+```     
+    "main": "server.js",
+    "type": "module",
+    "scripts": {
+        "start": "node server.js"
+    }
+```
 
 Proceso de Arranque:
     - nodemon server.js
+
 
 Conexion a las Bases de Datos en:
     - lib/DbLocal.js
     - lib/DbNeon.js
     
-Servicios Relacionados con las Bases de Datos:
-    - services/migration.service.js:
-        - getLocalTables() -> Obtener las Tablas de la DB Local
-        - cleanTable(tablename) -> Eliminar los Datos Contenidos en las Tablas
-        - getDeployTables() -> Obtener las Tablas de la DB en Deploy
-        - getDataByTable(tablename) -> Obtenerlos Datos Contenidos en las Tablas
 
+Services:
+    - services/migration.service.js:
+        - getLocalTables() -> Obtener el nombre de Tablas de la DB Local
+        - getDeployTables() -> Obtener el nombre de Tablas de la DB Deploy
+        - AlterTableNameLocal(TableName) -> Convertor de 'tablename' a 'tablename_local'
+        - prepareTable(tablename) -> Actualizar los datos de las tablas en local al ejecutar el script
+        - DropTable(TableName) -> Eliminar Tabla Local No Coincidentes con la tabla en Deploy
+        - getDataByTable(tablename) -> En Proceso (Talvez y lo borro después)
+    - services/connect.service.js:
+        - ActivateExtension() -> Activar Extension de Postgres para Conectar Con Databases del Exterior (En Deploy)
+        - createServer() -> Crear Servidor que se conecte a la base de datos en deploy
+        - connectUsers() -> Enlazar Usuario Local Con el Usuario que manipula la base de datos en local
+        - importForeignTable(Table) -> Añadir Tablas Foraneas a la Base de datos Local
+        - cloneTable(TableName) -> Clonar la tabla foranea y así, obtener una tabla local con los mismos datos
+        - dropForeignTable(TableName) -> Eliminar tabla foranea
+        - altertablename(TableName) -> Convertor de 'tablename_local' a 'tablename'
+        - DropCon() -> Eliminar Conexion Con la base de datos Local
+
+        
 Controladores:
     - controllers/migration.controller.js:
-        - migration.prepareTables() -> Localizar y Limpiar las Tablas de la Db Local
+        - migration.CleanSchema() -> Eliminar Tablas Locales No Coincidentes con las tablas en Deploy
+        - migration.importTables() -> Agregar Tablas Faltantes en la DB Local en base a las tablas en deploy
+        - migration.prepareTables() -> Actualizar Data
+        - migration.getData() -> En Cuarentena
+    
 
 
