@@ -1,0 +1,31 @@
+Proceso de Config:
+    - npm init -y
+    - npm install express nodemon pg dotenv
+
+Configuracion de Variables de Entorno (.env):
+    - user = tu_usuario
+    - password = tu_password
+    - host = tu_host (por default localhost)
+    - port = tu_port (Por default 5432)
+    - db_local = tu_db_local
+    - db_url = tu_db_en_deploy
+
+Proceso de Arranque:
+    - nodemon server.js
+
+Conexion a las Bases de Datos en:
+    - lib/DbLocal.js
+    - lib/DbNeon.js
+    
+Servicios Relacionados con las Bases de Datos:
+    - services/migration.service.js:
+        - getLocalTables() -> Obtener las Tablas de la DB Local
+        - cleanTable(tablename) -> Eliminar los Datos Contenidos en las Tablas
+        - getDeployTables() -> Obtener las Tablas de la DB en Deploy
+        - getDataByTable(tablename) -> Obtenerlos Datos Contenidos en las Tablas
+
+Controladores:
+    - controllers/migration.controller.js:
+        - migration.prepareTables() -> Localizar y Limpiar las Tablas de la Db Local
+
+
