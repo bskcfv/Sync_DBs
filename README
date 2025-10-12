@@ -1,70 +1,210 @@
-Proceso de Config:
-    - npm init -y
-    - npm install express nodemon pg dotenv
 
+---
 
-Configuracion de Variables de Entorno (.env):
-    #Variables de Conexion a Db Local
-    - user = tu_usuario
-    - password = tu_password
-    - host = tu_host (por default localhost)
-    - port = tu_port (Por default 5432)
-    - db_local = tu_db_local
-    - db_schema = tu_schema (Por default es **public**)
-    #URL para Conexion Directa con la DB en Deploy
-    - db_url = tu_db_en_deploy
-    #Variables de Conexion a DB Deploy
-    - db_d_host = tu_host_deploy
-    - db_d_dbname= tu_db_deploy
-    - db_d_port = tu_port_deploy
-    - db_d_user = tu_user_deploy
-    - db_d_password = tu_password_deploy
-    - db_d_schema = tu_schema (Por default es **public**)
+# Proyecto de Sincronización PostgreSQL (Node.js)
 
+Este proyecto permite **sincronizar y replicar tablas** entre una **base de datos local** y una **base de datos en deploy (Neon, Render, etc.)**.
+El sistema incluye servicios que comparan esquemas, crean conexiones entre servidores, importan tablas faltantes y actualizan los datos locales según el estado del deploy.
 
-Añadir en package.json:
-```     
-    "main": "server.js",
-    "type": "module",
-    "scripts": {
-        "start": "node server.js"
-    }
+---
+
+## ⚙️ Configuración Inicial
+
+### 1️⃣ Instalación del entorno
+
+Ejecuta los siguientes comandos para configurar el proyecto:
+
+```bash
+npm init -y
+npm install express nodemon pg dotenv
 ```
 
-Proceso de Arranque:
-    - nodemon server.js
+---
+
+### 2️⃣ Variables de entorno (`.env`)
+
+Crea un archivo `.env` en la raíz del proyecto con los siguientes valores:
+
+```ini
+# --- Base de Datos Local ---
+user=tu_usuario
+password=tu_password
+host=localhost
+port=5432
+db_local=tu_db_local
+db_schema=public
+
+# --- Conexión Directa al Deploy ---
+db_url=tu_db_en_deploy
+
+# --- Base de Datos en Deploy ---
+db_d_host=tu_host_deploy
+db_d_dbname=tu_db_deploy
+db_d_port=tu_port_deploy
+db_d_user=tu_user_deploy
+db_d_password=tu_password_deploy
+db_d_schema=public
+```
+
+---
+
+### 3️⃣ Configuración del `package.json`
+
+Agrega o reemplaza las siguientes líneas:
+
+```json
+{
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  }
+}
+```
+
+---
+
+### 4️⃣ Ejecución del proyecto
+
+Para iniciar el script principal:
+
+```bash
+nodemon server.js
+```
+
+o
+
+```bash
+npm run dev
+```
+
+---
+
+## 🧠 Estructura del Proyecto
+
+```
+project/
+├── lib/
+│   ├── DbLocal.js      # Conexión a la base de datos local
+│   └── DbNeon.js       # Conexión a la base de datos en deploy
+├── services/
+│   ├── migration.service.js
+│   └── connect.service.js
+├── controllers/
+│   ├── migration.controller.js
+│   └── connect.controller.js
+├── server.js
+└── .env
+```
+
+---
+
+## 🧰 Conexión a Bases de Datos
+
+Las conexiones se manejan desde:
+
+* `lib/DbLocal.js` → conexión local
+* `lib/DbNeon.js` → conexión remota (deploy)
+
+Cada archivo usa el módulo `pg` para conectarse mediante las credenciales definidas en `.env`.
+
+---
+
+## 🧩 Servicios
+
+### `services/migration.service.js`
+
+| Función                            | Descripción                                                           |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| **getLocalTables()**               | Obtiene el nombre de las tablas en la base local.                     |
+| **getDeployTables()**              | Obtiene el nombre de las tablas en la base deploy.                    |
+| **AlterTableNameLocal(TableName)** | Convierte `tablename` en `tablename_local`.                           |
+| **prepareTable(TableName)**        | Actualiza los datos de una tabla local con los de la tabla en deploy. |
+| **DropTable(TableName)**           | Elimina tablas locales que no existen en la base deploy.              |
+| **getDataByTable(TableName)**      | (En desarrollo) Obtiene los datos de una tabla específica.            |
+
+---
+
+### `services/connect.service.js`
+
+| Función                         | Descripción                                                           |
+| ------------------------------- | --------------------------------------------------------------------- |
+| **ActivateExtension()**         | Activa la extensión `postgres_fdw` para conectar bases externas.      |
+| **createServer()**              | Crea el servidor remoto de conexión con la base de datos en deploy.   |
+| **connectUsers()**              | Enlaza usuarios locales con los del deploy.                           |
+| **importForeignTable(Table)**   | Importa tablas foráneas desde deploy hacia local.                     |
+| **cloneTable(TableName)**       | Clona una tabla foránea, replicando su estructura y datos localmente. |
+| **dropForeignTable(TableName)** | Elimina una tabla foránea importada.                                  |
+| **alterTableName(TableName)**   | Convierte `tablename_local` nuevamente en `tablename`.                |
+| **DropCon()**                   | Elimina la conexión con el servidor remoto.                           |
+
+---
+
+## 🎮 Controladores
+
+### `controllers/migration.controller.js`
+
+| Función                       | Descripción                                              |
+| ----------------------------- | -------------------------------------------------------- |
+| **migration.CleanSchema()**   | Elimina tablas locales que no existen en la base deploy. |
+| **migration.importTables()**  | Crea tablas faltantes en local según las del deploy.     |
+| **migration.prepareTables()** | Actualiza los datos en tablas locales.                   |
+| **migration.getData()**       | (En cuarentena) Funcionalidad pendiente de revisión.     |
+
+---
+
+### `controllers/connect.controller.js`
+
+| Función                      | Descripción                                                 |
+| ---------------------------- | ----------------------------------------------------------- |
+| **Con.GenerateConnection()** | Genera la conexión entre la base local y la base en deploy. |
+
+---
+
+## 🚀 Ejemplo de Ejecución (`server.js`)
+
+```js
+import { migration } from "./controllers/migration.controller.js";
+import { Con } from "./controllers/connect.controller.js";
 
 
-Conexion a las Bases de Datos en:
-    - lib/DbLocal.js
-    - lib/DbNeon.js
-    
+(async() => {
+    console.log("Iniciando Sincronización")
+    await Con.GenerateConnection()
+    await migration.CleanSchema()
+    await migration.importTables()
+    await migration.prepareTables()
+    //await migration.getData()
+    console.log("Sincronización Finalizada")
+})();
+```
 
-Services:
-    - services/migration.service.js:
-        - getLocalTables() -> Obtener el nombre de Tablas de la DB Local
-        - getDeployTables() -> Obtener el nombre de Tablas de la DB Deploy
-        - AlterTableNameLocal(TableName) -> Convertor de 'tablename' a 'tablename_local'
-        - prepareTable(tablename) -> Actualizar los datos de las tablas en local al ejecutar el script
-        - DropTable(TableName) -> Eliminar Tabla Local No Coincidentes con la tabla en Deploy
-        - getDataByTable(tablename) -> En Proceso (Talvez y lo borro después)
-    - services/connect.service.js:
-        - ActivateExtension() -> Activar Extension de Postgres para Conectar Con Databases del Exterior (En Deploy)
-        - createServer() -> Crear Servidor que se conecte a la base de datos en deploy
-        - connectUsers() -> Enlazar Usuario Local Con el Usuario que manipula la base de datos en local
-        - importForeignTable(Table) -> Añadir Tablas Foraneas a la Base de datos Local
-        - cloneTable(TableName) -> Clonar la tabla foranea y así, obtener una tabla local con los mismos datos
-        - dropForeignTable(TableName) -> Eliminar tabla foranea
-        - altertablename(TableName) -> Convertor de 'tablename_local' a 'tablename'
-        - DropCon() -> Eliminar Conexion Con la base de datos Local
+---
 
-        
-Controladores:
-    - controllers/migration.controller.js:
-        - migration.CleanSchema() -> Eliminar Tablas Locales No Coincidentes con las tablas en Deploy
-        - migration.importTables() -> Agregar Tablas Faltantes en la DB Local en base a las tablas en deploy
-        - migration.prepareTables() -> Actualizar Data
-        - migration.getData() -> En Cuarentena
-    
+## 📦 Dependencias
+
+| Paquete     | Descripción                                   |
+| ----------- | --------------------------------------------- |
+| **express** | Framework opcional para crear endpoints REST. |
+| **pg**      | Cliente oficial de PostgreSQL para Node.js.   |
+| **dotenv**  | Carga de variables de entorno.                |
+| **nodemon** | Recarga automática en entorno de desarrollo.  |
+
+---
+
+## 📘 Estado del Proyecto
+
+* **Versión:** 0.2.0
+* **Estado:** En desarrollo (migración y sincronización estable)
+* **Objetivo:** Sincronizar esquemas y datos entre bases locales y remotas (Neon/PostgreSQL).
+
+---
+
+## 👨‍💻 Autor
+
+**Cristian Valderrama**
+📧 [cristianvalderrama1014@gmail.com](mailto:cristianvalderrama1014@gmail.com)
+🌐 [GitHub: bskcfv](https://github.com/bskcfv)
 
 
