@@ -1,5 +1,4 @@
 
----
 
 # Proyecto de Sincronización PostgreSQL (Node.js)
 
