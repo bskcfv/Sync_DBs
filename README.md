@@ -32,7 +32,7 @@ Ejecuta los siguientes comandos para configurar el proyecto:
 
 ```bash
 npm init -y
-npm install express nodemon pg dotenv
+npm install express nodemon pg dotenv pg-listen
 ```
 
 ---
