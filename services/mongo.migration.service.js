@@ -50,3 +50,36 @@ export const dropCollection = async(name) => {
         console.log("Error en mongo.migration.dropCollection: ", error)
     }
 }
+
+/**
+ * Servicio de Insercion de Datos
+ * 
+ * @param {String} collection Nombre de la Coleccion
+ * @param {Object[]} data Documentos a Insertar
+ */
+export const insertTo = async(collection, data) => {
+    try {
+        //Validacion
+        if(data.length == 0){
+            console.log(`No hay Datos que insertar en ${collection}`)
+            return;
+        }
+        //Funcion para Insertar Varios Documentos
+        await db.collection(collection).insertMany(data)
+        //Visualizar Resultado
+        console.log(`No° de Documentos Insertados: ${data.length}. En la Collecion: ${collection}`)
+    } catch (error) {
+        console.log("Error en mongo.migration.insertTo: ", error)
+    }
+}
+/**
+ * Servicio de Eliminar Todos los Documentos de una Coleccion
+ * @param {String} collection Nombre de la Coleccion 
+ */
+export const truncateCollection = async(collection) => {
+    try {
+        await db.collection(collection).deleteMany({});
+    } catch (error) {
+        console.log("Error en mongo.migration.truncateCollection: ", error)
+    }
+}

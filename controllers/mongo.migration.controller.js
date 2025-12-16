@@ -1,5 +1,5 @@
-import { getCollections, createCollections, dropCollection } from "../services/mongo.migration.service.js";
-import { getDeployTables } from "../services/migration.service.js";
+import { getCollections, createCollections, dropCollection, insertTo, truncateCollection } from "../services/mongo.migration.service.js";
+import { getDeployTables, getDataByTable } from "../services/migration.service.js";
 
 
 //Recuerdate Cabezon -> Async No Funciona Con Foreach
@@ -71,5 +71,39 @@ export const mongoController = {
         } catch (error) {
             console.log("Error en mongoController.importTables: ", error)
         }
+    },
+    /* Controlador en Cuarentena -_- No se Acerque Porfavor */
+    /*
+        Objetivo -> Obtener Todos los datos de la base de datos Principal, y migrarlos a MongoDb
+            Pasos:
+                1. Obtener el Nombre de las tablas
+                2. Recorrer cada tabla
+                3. Obtener todos los datos de cada tabla
+    */
+    getData : async() =>{
+        try {
+            //Servicio de Obtener Nombre de las Tablas
+            const tables = await getDeployTables();
+            //Recorrer Cada Tabla
+            for(let table of tables){
+                //Visualizar en Consola
+                console.log(`Tabla ${table.tablename} en Deploy Localizada`)
+                //Servicio de Obtencion de Datos de la tabla
+                const data = await getDataByTable(table.tablename)
+                //Visualizar los Datos de la tabla
+                //console.log(data)
+                //console.log(Object.keys(data))
+                //console.log(Object.values(data))
+
+                //Limpiar la Coleccion
+                await truncateCollection(table.tablename)
+                //Insertar Datos en Cada Coleccion
+                await insertTo(table.tablename, data)
+                
+            }
+        } catch (error) {
+            console.log(error)
+        }
+        
     }
 }
