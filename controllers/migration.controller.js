@@ -1,4 +1,4 @@
-import { getDeployTables, getLocalTables, DropTable, prepareTable, AlterTableNameLocal } from "../services/migration.service.js";
+import { getDeployTables, getLocalTables, DropTable, prepareTable, AlterTableNameLocal, getDataByTable } from "../services/migration.service.js";
 import { importForeignTable, cloneTable, dropForeignTable, altertablename } from "../services/connect.service.js";
 
 export const migration = {
@@ -102,11 +102,18 @@ export const migration = {
         }
     },
     /* Controlador en Cuarentena -_- No se Acerque Porfavor */
+    /*
+        Objetivo -> Obtener Todos los datos de la base de datos Principal, y migrarlos a MongoDb
+            Pasos:
+                1. Obtener el Nombre de las tablas
+                2. Recorrer cada tabla
+                3. Obtener todos los datos de cada tabla
+    */
     getData : async() =>{
         try {
             //Servicio de Obtener Nombre de las Tablas
             const tables = await getDeployTables();
-            //Recorrer Cada Fila Con el Nombre de la Respectiva Tabla
+            //Recorrer Cada Tabla
             tables.forEach(async(table) => {
                 //Obtener el nombre de la tabla en formato String
                 const tablename = JSON.stringify(table.tablename)
@@ -116,9 +123,9 @@ export const migration = {
                 const data = await getDataByTable(tablename)
                 //Visualizar los Datos de la tabla
                 data.forEach(async(row) => {
-                    //const result = await postDataByTable(tablename, Object.keys(row), Object.values(row))
-                    //console.log(result)
+                    console.log(row)
                     //const dataRow = JSON.stringify(row)
+                    //console.log(dataRow)
                     //console.log(Object.keys(row))
                     //console.log(Object.values(row))
                 });

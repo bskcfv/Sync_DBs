@@ -87,31 +87,3 @@ export const getDataByTable = async(TableName) => {
     );
     return (await result).rows;
 }
-
-//Servicio de Insercion de datos
-export const postDataByTable = async(TableName, fields, values) =>{
-    //preparedStatement -> Declarar Insert Según Tabla
-    let preparedStatement = `INSERT INTO ${TableName}(`;
-    //Tomar el array fields ejemplo: ['id', 'nombre', 'edad']
-    //Convertirlo con .join(", ") a String -> "'id', ''nombre', 'edad'"
-    //Asignar String Procesado a variable preparedFields
-    let preparedFields = fields.join(", ");
-    //Unir preparedStament con preparedFields con el cierre de la sentencia ')'
-    preparedStatement += preparedFields + ') VALUES('
-    //Recorrer Valores Respetando su Tipo de Dato
-    values.forEach((value, index) => {
-        //Validar el Ultimo Valor del array
-        if(index === values.length - 1) {
-            //agregar el ultimo valor junto al cierre de la sentencia SQL
-            preparedStatement += `${value});`
-        }
-        else {
-            //Agregar Valor Intermedio
-            preparedStatement += `${value}, `
-        }
-    });
-    //Ejecutar Insercion
-    const result = await poolLocal.query(preparedStatement)
-    //Retornar Numero de Filas Afectadas
-    return result.rowCount
-}
