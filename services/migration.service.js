@@ -82,8 +82,8 @@ export const DropTable = async(TableName) => {
 
 //Servicio de Obtencion de datos
 export const getDataByTable = async(TableName) => {
-    const result = poolDeploy.query(
+    const result = await poolDeploy.query(
         `SELECT * FROM ${TableName};`
     );
-    return (await result).rows;
+    return result.rows;
 }

@@ -15,6 +15,7 @@
     "express": "^5.1.0",
     "mongodb": "^7.0.0",
     "pg": "^8.16.3",
-    "pg-listen": "^1.7.0"
+    "pg-listen": "^1.7.0",
+    "terminal-kit": "^3.1.2"
   }
 }
