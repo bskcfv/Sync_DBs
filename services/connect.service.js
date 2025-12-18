@@ -1,4 +1,5 @@
 import poolLocal from "../lib/DbLocal.js";
+import { validateIdentifier } from "../helper/validateName.js";
 import dotenv from 'dotenv'
 
 dotenv.config()
@@ -70,14 +71,17 @@ export const connectUsers = async() => {
 //Servicio Importar Tablas de La DB en Deploy
 export const importForeignTable = async(Table) =>{
     try {
+
+        const safeTable = validateIdentifier(Table)
+
         await poolLocal.query(
             `
             IMPORT FOREIGN SCHEMA ${process.env.db_d_schema}
-            LIMIT TO (${Table})
+            LIMIT TO (${safeTable})
             FROM SERVER deploy_server INTO ${process.env.db_schema};
             `
         )
-        return console.log(`Tabla ${Table} Ha Sido Importada`)
+        return console.log(`Tabla ${safeTable} Ha Sido Importada`)
     } catch (error) {
         console.log(`Error en Importar Tabla: ${error}`)
     }
@@ -87,13 +91,15 @@ export const importForeignTable = async(Table) =>{
 //Le Daremos el nombre 'tablename_loca' para evitar conflictos
 export const cloneTable = async(TableName) => {
     try {
+        const safeName = validateIdentifier(TableName)
+
         await poolLocal.query(
             `
-            CREATE TABLE ${TableName}_local AS
-            SELECT * FROM ${TableName};
+            CREATE TABLE ${safeName}_local AS
+            SELECT * FROM ${safeName};
             `
         )
-        return console.log(`La tabla ${TableName}_local Ha Sido Creada en la DB local!!`)
+        return console.log(`La tabla ${safeName}_local Ha Sido Creada en la DB local!!`)
     } catch (error) {
         console.log(`Error en Clonar Tabla: ${error}`)
     }
@@ -102,10 +108,13 @@ export const cloneTable = async(TableName) => {
 //Servicio de Eliminar Tabla Importada
 export const dropForeignTable = async(TableName) => {
     try {
+
+        const safeName = validateIdentifier(TableName)
+
         await poolLocal.query(
-            `DROP FOREIGN TABLE IF EXISTS ${TableName};`
+            `DROP FOREIGN TABLE IF EXISTS ${safeName};`
         )
-        return console.log(`Tabla Importada ${TableName} Ha sido Eliminada`)
+        return console.log(`Tabla Importada ${safeName} Ha sido Eliminada`)
     } catch (error) {
         console.log(`Error en Eliminar Tabla Clonada: ${TableName}`)
     }
@@ -114,13 +123,16 @@ export const dropForeignTable = async(TableName) => {
 //Servicio Modificar nombre, pasar de tablename_local -> tablename
 export const altertablename = async(TableName) => {
     try {
+
+        const safeName = validateIdentifier(TableName)
+
         await poolLocal.query(
             `
-            ALTER TABLE ${TableName}_local
-            RENAME TO ${TableName};
+            ALTER TABLE ${safeName}_local
+            RENAME TO ${safeName};
             `
         )
-        return console.log(`El Nombre de la Tabla ha sido Actualizado por: ${TableName}`)
+        return console.log(`El Nombre de la Tabla ha sido Actualizado por: ${safeName}`)
     } catch (error) {
         console.log(`Error en altertablename: ${error}`)
     }
