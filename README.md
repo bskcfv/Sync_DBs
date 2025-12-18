@@ -185,7 +185,7 @@ project/
 
 ## 🚀 Ejemplo de ejecución
 
-![Demo de ejecución](./assets/demo.gif)
+![Demo de ejecución](./assets/gifSync.gif)
 
 ---
 
