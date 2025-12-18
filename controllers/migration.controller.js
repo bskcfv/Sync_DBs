@@ -16,12 +16,12 @@ export const migration = {
             //Servicio de Obtencion de Nombres de las Tablas en Deploy
             const DeployTables = await getDeployTables();
             //Recorrer Las Tablas Locales
-            LocalTables.forEach(async(LocalTable) => {
+            for(let LocalTable of LocalTables){
                 //Funcion some() -> Retornar True Sí Alguna de las Tablas Deploy Matchea con la Tabla Local que esté siendo recorrida
                 const match = DeployTables.some(DeployTable => DeployTable.tablename === LocalTable.tablename)
                 //Sí No Hubo Match, Eliminar Tabla de la Base de Datos Local
                 if(!match) await DropTable(LocalTable.tablename)
-            });
+            }
         } catch (error) {
             console.log(`Error en Controller.CleanSchema: ${error}`)
         }
@@ -44,21 +44,21 @@ export const migration = {
             //Llamado al servicio de Obtener nombre de Tablas Deploy
             const DeployTables = await getDeployTables();
             //Recorrer las tablas en Deploy
-            DeployTables.forEach(async(DeployTable)=>{
+            for(let DeployTable of DeployTables){
             //Recorrer las tablas Locales, y verificar sí hay coincidencia con la tabla deploy que esté siendo recorrida
             const match = LocalTables.some(LocalTable => LocalTable.tablename === DeployTable.tablename)
             //Sí no hubo match, es porque la tabla no está en la DB Local, se debe Agregar
-            if(!match){
-                //Importar desde la DataBase en Deploy, la tabla Faltante (Crear una FOREIGN TABLE)
-                await importForeignTable(DeployTable.tablename)
-                //Clonar la tabla importada dentro de la Base de Datos Local
-                await cloneTable(DeployTable.tablename)
-                //Eliminar la tabla Importada (Eliminar la FOREIGN TABLE)
-                await dropForeignTable(DeployTable.tablename)
-                //Actualizar el Nombre Como las tablas en Deploy
-                await altertablename(DeployTable.tablename)
-            } 
-        })
+                if(!match){
+                    //Importar desde la DataBase en Deploy, la tabla Faltante (Crear una FOREIGN TABLE)
+                    await importForeignTable(DeployTable.tablename)
+                    //Clonar la tabla importada dentro de la Base de Datos Local
+                    await cloneTable(DeployTable.tablename)
+                    //Eliminar la tabla Importada (Eliminar la FOREIGN TABLE)
+                    await dropForeignTable(DeployTable.tablename)
+                    //Actualizar el Nombre Como las tablas en Deploy
+                    await altertablename(DeployTable.tablename)
+                }
+            }
         } catch (error) {
             console.log(`Error en Controller.imporTables: ${error}`)
         } 
@@ -83,7 +83,7 @@ export const migration = {
             //Servicio de obtencion de Nombre de las Tablas
             const tables = await getLocalTables();
             //Recorrer Cada Fila Con el Nombre de la Respectiva Tabla
-            tables.forEach(async(table) => {
+            for(let table of tables){
                 //Servicio de Pasar los Nombres 'tablename' a 'tablename_local' para evitar conflictos
                 await AlterTableNameLocal(table.tablename)
                 //Servicio de Importar las tablas en Deploy (CREAR FOREIGN TABLE)
@@ -94,7 +94,7 @@ export const migration = {
                 await dropForeignTable(table.tablename)
                 //Servicio de restaurar los nombres: 'tablename_local' -> 'tablename'
                 await altertablename(table.tablename)
-            });
+            }
             //Retornar Mensaje de Proceso Exitoso
             return console.log("Datos Preparados Y Actualizados")
         } catch (error) {

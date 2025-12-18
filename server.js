@@ -28,7 +28,7 @@ async function menu() {
                 await migration.importTables()
                 await migration.prepareTables()
                 terminal.blue("\nImportacion Terminada\n")
-                setTimeout(menu, 10000);
+                setTimeout(menu, 2000);
                 break;
 
             case 'Migrate RDB to Mongo Atlas':
@@ -38,7 +38,7 @@ async function menu() {
                 await mongoController.importTables()
                 await mongoController.getData()
                 terminal.blue("\nImportacion MongoTerminada\n")
-                setTimeout(menu, 10000);
+                setTimeout(menu, 2000);
                 break;
 
 

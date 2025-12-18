@@ -82,8 +82,13 @@ export const DropTable = async(TableName) => {
 
 //Servicio de Obtencion de datos
 export const getDataByTable = async(TableName) => {
-    const result = await poolDeploy.query(
-        `SELECT * FROM ${TableName};`
-    );
-    return result.rows;
+    try {
+        const result = await poolDeploy.query(
+            `SELECT * FROM public.${TableName};`
+        );
+        return result.rows;    
+    } catch (error) {
+        console.log("Error en migration.getDataByTable: ", error)
+    }
+    
 }
