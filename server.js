@@ -10,6 +10,8 @@ async function menu() {
     let itemsMenu = [
         'Migrate RDB to RDB local',
         'Migrate RDB to Mongo Atlas',
+        'What Data Import to Mongo Atlas',
+        'What Table Import to Mongo Atlas',
         'exit'
     ]
 
@@ -40,7 +42,36 @@ async function menu() {
                 terminal.blue("\nImportacion MongoTerminada\n")
                 setTimeout(menu, 2000);
                 break;
-
+            
+            case 'What Data Import to Mongo Atlas':
+                terminal.blue("\nEscriba el Numero de las tablas a Necesitar: ")
+                const listDataTables = []
+                let number = await terminal.inputField().promise;
+                for (let i = 0; i <= number; i++) {
+                    terminal.blue(`\n Escriba el Nombre de la tabla ${i}: `)
+                    let tableName = await terminal.inputField().promise;
+                    listDataTables.push(tableName)
+                }
+                terminal.blue("\n Tablas Guardadas, Es momento de Procesar Solicitud\n")
+                await mongoController.getSelectedData(listDataTables)
+                terminal.green("\nTablas Enviadas Con exito\n")
+                setTimeout(menu, 5000);
+                break;
+            
+            case 'What Table Import to Mongo Atlas':
+                terminal.blue("\nEscriba el Numero de las tablas a Importar: ")
+                const listTables = []
+                let numbertables = await terminal.inputField().promise;
+                for (let i = 0; i <= numbertables; i++) {
+                    terminal.blue(`\n Escriba el Nombre de la tabla ${i}: `)
+                    let tableName = await terminal.inputField().promise;
+                    listTables.push(tableName)
+                }
+                terminal.blue("\n Tablas Guardadas, Es momento de Procesar Solicitud\n")
+                await mongoController.importSelected(listTables)
+                terminal.green("\nTablas Importadas Con exito\n")
+                setTimeout(menu, 5000);
+                break;
 
             case 'exit':
                 terminal.green("\nSaliendo del Programa\n")

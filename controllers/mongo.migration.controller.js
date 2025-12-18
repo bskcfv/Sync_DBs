@@ -3,6 +3,7 @@ import { getDeployTables, getDataByTable } from "../services/migration.service.j
 
 
 //Recuerdate Cabezon -> Async No Funciona Con Foreach
+//Recuerdate Cabezon -> Los Arrays No se deben Mutar mientras se Recorren
 
 export const mongoController = {
     /*
@@ -72,7 +73,42 @@ export const mongoController = {
             console.log("Error en mongoController.importTables: ", error)
         }
     },
-    /* Controlador en Cuarentena -_- No se Acerque Porfavor */
+    importSelected : async(tables) => {
+        try {
+            const validTables = []
+            //Obtener Tablas en Deploy
+            const deployTables = await getDeployTables();
+            //Obtener Colecciones de Mongo
+            const mongoCollections = await getCollections();
+            //Recorrer todas las tablas Solicitadas
+            for(let tableRequested of tables){
+                //Validar Si existe la tabla Solicitada
+                const match = deployTables.some(dTable => dTable.tablename === tableRequested)
+                if(!match){
+                    console.log(`Tabla ${tableRequested} No existe en la Base de Datos Central`)
+                    continue;
+                }
+                //Validar Si la Coleccion en Mongo ya Existe
+                const mongoMatch = mongoCollections.some(collection => collection.name === tableRequested)
+                if(mongoMatch){
+                    console.log(`La Coleccion ${tableRequested} ya existe dentro de Mongo.`)
+                    continue;
+                }
+                //Ingresar el Nombre de las tablas que pasaron las validaciones
+                validTables.push(tableRequested)
+            }
+            //Validar Si No hay tablas que Usar
+            if(validTables.length == 0) {
+                console.log("Ninguna Tabla Ha Sido Importada")
+                return;
+            }
+            //Crear Colleciones Con los Datos Depurados Obtenidos
+            await createCollections(validTables)
+            console.log("Colleciones Creadas Correctamente!")
+        } catch (error) {
+            console.log("Error en mongoController.importSelected: ", error)
+        }
+    },
     /*
         Objetivo -> Obtener Todos los datos de la base de datos Principal, y migrarlos a MongoDb
             Pasos:
@@ -102,8 +138,37 @@ export const mongoController = {
                 
             }
         } catch (error) {
-            console.log(error)
+            console.log("Error en mongoController.getData: ",error)
         }
         
+    },
+    /**
+     * Controlador para Obtener Data Segun las Tablas que Quieras Importar
+     * 
+     * @param {String[]} Tables 
+     */
+    getSelectedData : async(tables) => {
+        try {
+            //Servicio de Obtener Nombre de las Tablas
+            const deployTables = await getDeployTables();
+            //Recorrer las Tablas Solicitadas
+            for(let tableRequested of tables){
+                //Validar Existencia de Tablas a Solicitar
+                const match = deployTables.some(dTable => dTable.tablename === tableRequested)
+                if(!match) {
+                    console.log(`Tabla ${tableRequested} No Existente dentro de la Database`)
+                    //Saltar a la Siguiente Iteracion
+                    continue;
+                }
+                //Obtener Datos de la Tabla Solicitada
+                const data = await getDataByTable(tableRequested)
+                //Limpiar la Coleccion
+                await truncateCollection(tableRequested)
+                //Insertar Datos en Cada Coleccion
+                await insertTo(tableRequested, data)
+            }
+        } catch (error) {
+            console.log("Error en mongoController.getSelectedData: ",error)
+        }
     }
 }
