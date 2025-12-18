@@ -1,5 +1,3 @@
-
-
 <p align="center">
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original-wordmark.svg" width="120" alt="PostgreSQL Logo"/>
 </p>
@@ -7,14 +5,14 @@
 <h1 align="center">🔄 Sync_DBs — PostgreSQL Sync & Migration Tool</h1>
 
 <p align="center">
-  <b>Sincroniza y migra automáticamente tus bases de datos PostgreSQL locales y en deploy en tiempo real.</b><br/>
-  <sub>Desarrollado con <b>Node.js + PostgreSQL + FS</b></sub>
+  <b>Herramienta CLI para clonar, sincronizar y migrar bases de datos PostgreSQL desplegadas hacia entornos locales o MongoDB Atlas.</b><br/>
+  <sub>Construido con <b>Node.js · PostgreSQL · postgres_fdw · MongoDB</b></sub>
 </p>
-
 
 <p align="center">
   <img src="https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white"/>
   <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white"/>
+  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white"/>
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/>
 </p>
 
@@ -24,22 +22,45 @@
 
 ---
 
-## ⚙️ Configuración Inicial
+## 🧠 Descripción general
 
-### 1️⃣ Instalación del entorno
+**Sync_DBs** es una herramienta de sincronización de bases de datos diseñada para:
 
-Ejecuta los siguientes comandos para configurar el proyecto:
+- Clonar **estructuras y datos** desde PostgreSQL en producción hacia PostgreSQL local
+- Sincronizar esquemas (crear, eliminar y actualizar tablas)
+- Migrar datos desde PostgreSQL hacia **MongoDB Atlas**
+- Evitar el uso de dumps tradicionales (`pg_dump`) usando **`postgres_fdw`**
+
+El sistema está pensado para:
+- Entornos de desarrollo
+- Replicación de datos
+- Testing con datos reales
+- Migraciones progresivas SQL → NoSQL
+
+---
+
+## ✨ Características principales
+
+- 🔗 Conexión entre PostgreSQL local y remoto mediante **Foreign Data Wrapper**
+- 🧹 Limpieza automática de esquemas no coincidentes
+- 🧬 Clonación de tablas y sincronización de datos
+- 🔁 Actualización transaccional (BEGIN / COMMIT / ROLLBACK)
+- 🍃 Migración de datos a MongoDB Atlas
+- 🖥️ Arquitectura modular lista para CLI
+
+---
+
+## ⚙️ Configuración inicial
+
+### 1️⃣ Instalación de dependencias
 
 ```bash
 npm init -y
-npm install express nodemon pg dotenv pg-listen
-```
+````
 
 ---
 
 ### 2️⃣ Variables de entorno (`.env`)
-
-Crea un archivo `.env` en la raíz del proyecto con los siguientes valores:
 
 ```ini
 # --- Base de Datos Local ---
@@ -50,177 +71,158 @@ port=5432
 db_local=tu_db_local
 db_schema=public
 
-# --- Conexión Directa al Deploy ---
-db_url=tu_db_en_deploy
-
 # --- Base de Datos en Deploy ---
 db_d_host=tu_host_deploy
 db_d_dbname=tu_db_deploy
-db_d_port=tu_port_deploy
+db_d_port=5432
 db_d_user=tu_user_deploy
 db_d_password=tu_password_deploy
 db_d_schema=public
+
+# --- URI directa DB PostgreSql ---
+db_url=postgres://user:password@host:port/db
+# --- URI directa DB Mongo Atlas ---
+mongo_url=tu_url
 ```
 
 ---
 
 ### 3️⃣ Configuración del `package.json`
 
-Agrega o reemplaza las siguientes líneas:
-
 ```json
 {
-  "main": "server.js",
-  "type": "module",
+   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server.js"
   }
 }
 ```
 
 ---
 
-### 4️⃣ Ejecución del proyecto
-
-Para iniciar el script principal:
+### 4️⃣ Ejecución
 
 ```bash
-nodemon server.js
-```
-
-o
-
-```bash
-npm run dev
+node server.js
 ```
 
 ---
 
-## 🧠 Estructura del Proyecto
+## 🧱 Estructura del proyecto
 
 ```
 project/
 ├── lib/
-│   ├── DbLocal.js      # Conexión a la base de datos local
-│   └── DbNeon.js       # Conexión a la base de datos en deploy
+│   ├── DbLocal.js          # Conexión PostgreSQL local
+│   ├── DbNeon.js           # Conexión PostgreSQL deploy
+│   └── DbMongo.js          # Conexión MongoDB Atlas
 ├── services/
+│   ├── connect.service.js  # postgres_fdw y conexión remota
 │   ├── migration.service.js
-│   └── connect.service.js
+│   └── mongo.migration.service.js
 ├── controllers/
+│   ├── connect.controller.js
 │   ├── migration.controller.js
-│   └── connect.controller.js
+│   └── mongo.controller.js
 ├── server.js
 └── .env
 ```
 
 ---
 
-## 🧰 Conexión a Bases de Datos
+## 🔗 Flujo de sincronización PostgreSQL
 
-Las conexiones se manejan desde:
-
-* `lib/DbLocal.js` → conexión local
-* `lib/DbNeon.js` → conexión remota (deploy)
-
-Cada archivo usa el módulo `pg` para conectarse mediante las credenciales definidas en `.env`.
-
----
-
-## 🧩 Servicios
-
-### `services/migration.service.js`
-
-| Función                            | Descripción                                                           |
-| ---------------------------------- | --------------------------------------------------------------------- |
-| **getLocalTables()**               | Obtiene el nombre de las tablas en la base local.                     |
-| **getDeployTables()**              | Obtiene el nombre de las tablas en la base deploy.                    |
-| **AlterTableNameLocal(TableName)** | Convierte `tablename` en `tablename_local`.                           |
-| **prepareTable(TableName)**        | Actualiza los datos de una tabla local con los de la tabla en deploy. |
-| **DropTable(TableName)**           | Elimina tablas locales que no existen en la base deploy.              |
-| **getDataByTable(TableName)**      | (En desarrollo) Obtiene los datos de una tabla específica.            |
+1. Activar extensión `postgres_fdw`
+2. Crear servidor remoto
+3. Mapear usuarios
+4. Importar tablas foráneas
+5. Clonar tablas localmente
+6. Sincronizar datos mediante transacciones
+7. Eliminar foreign tables
 
 ---
 
-### `services/connect.service.js`
+## 🧩 Servicios principales
 
-| Función                         | Descripción                                                           |
-| ------------------------------- | --------------------------------------------------------------------- |
-| **ActivateExtension()**         | Activa la extensión `postgres_fdw` para conectar bases externas.      |
-| **createServer()**              | Crea el servidor remoto de conexión con la base de datos en deploy.   |
-| **connectUsers()**              | Enlaza usuarios locales con los del deploy.                           |
-| **importForeignTable(Table)**   | Importa tablas foráneas desde deploy hacia local.                     |
-| **cloneTable(TableName)**       | Clona una tabla foránea, replicando su estructura y datos localmente. |
-| **dropForeignTable(TableName)** | Elimina una tabla foránea importada.                                  |
-| **alterTableName(TableName)**   | Convierte `tablename_local` nuevamente en `tablename`.                |
-| **DropCon()**                   | Elimina la conexión con el servidor remoto.                           |
+### `connect.service.js`
 
----
-
-## 🎮 Controladores
-
-### `controllers/migration.controller.js`
-
-| Función                       | Descripción                                              |
-| ----------------------------- | -------------------------------------------------------- |
-| **migration.CleanSchema()**   | Elimina tablas locales que no existen en la base deploy. |
-| **migration.importTables()**  | Crea tablas faltantes en local según las del deploy.     |
-| **migration.prepareTables()** | Actualiza los datos en tablas locales.                   |
-| **migration.getData()**       | (En cuarentena) Funcionalidad pendiente de revisión.     |
+| Función                | Descripción                 |
+| ---------------------- | --------------------------- |
+| `ActivateExtension()`  | Activa `postgres_fdw`       |
+| `createServer()`       | Crea el servidor remoto     |
+| `connectUsers()`       | Mapea usuarios local/remoto |
+| `importForeignTable()` | Importa tablas foráneas     |
+| `cloneTable()`         | Clona estructura y datos    |
+| `dropForeignTable()`   | Elimina tablas foráneas     |
+| `altertablename()`     | Restaura nombres originales |
+| `DropCon()`            | Elimina conexión FDW        |
 
 ---
 
-### `controllers/connect.controller.js`
+### `migration.service.js`
 
-| Función                      | Descripción                                                 |
-| ---------------------------- | ----------------------------------------------------------- |
-| **Con.GenerateConnection()** | Genera la conexión entre la base local y la base en deploy. |
-
----
-
-## 🚀 Ejemplo de Ejecución (`server.js`)
-
-```js
-import { migration } from "./controllers/migration.controller.js";
-import { Con } from "./controllers/connect.controller.js";
-
-
-(async() => {
-    console.log("Iniciando Sincronización")
-    await Con.GenerateConnection()
-    await migration.CleanSchema()
-    await migration.importTables()
-    await migration.prepareTables()
-    //await migration.getData()
-    console.log("Sincronización Finalizada")
-})();
-```
+| Función                 | Descripción                 |
+| ----------------------- | --------------------------- |
+| `getLocalTables()`      | Obtiene tablas locales      |
+| `getDeployTables()`     | Obtiene tablas remotas      |
+| `prepareTable()`        | Sincroniza datos            |
+| `AlterTableNameLocal()` | Evita conflictos de nombres |
+| `DropTable()`           | Elimina tablas obsoletas    |
 
 ---
 
-## 📦 Dependencias
+### `mongo.migration.service.js`
 
-| Paquete     | Descripción                                   |
-| ----------- | --------------------------------------------- |
-| **express** | Framework opcional para crear endpoints REST. |
-| **pg**      | Cliente oficial de PostgreSQL para Node.js.   |
-| **dotenv**  | Carga de variables de entorno.                |
-| **nodemon** | Recarga automática en entorno de desarrollo.  |
+| Función                | Descripción                |
+| ---------------------- | -------------------------- |
+| `getCollections()`     | Obtiene colecciones        |
+| `createCollections()`  | Crea colecciones faltantes |
+| `dropCollection()`     | Elimina colecciones        |
+| `truncateCollection()` | Limpia documentos          |
+| `insertTo()`           | Inserta documentos         |
 
 ---
 
-## 📘 Estado del Proyecto
+## 🚀 Ejemplo de ejecución
 
-* **Versión:** 0.2.0
-* **Estado:** En desarrollo (migración y sincronización estable)
-* **Objetivo:** Sincronizar esquemas y datos entre bases locales y remotas (Neon/PostgreSQL).
+![Demo de ejecución](./assets/demo.gif)
+
+---
+
+## ⚠️ Limitaciones conocidas
+
+* `CREATE TABLE AS SELECT` no copia:
+
+  * Primary Keys
+  * Foreign Keys
+  * Índices
+* El proyecto prioriza **datos y estructura base**
+* Ideal para entornos de desarrollo y testing
+
+---
+
+## 🗺️ Roadmap
+
+* [ ] CLI con flags (`sync --to mongo`)
+* [ ] Validación de nombres (SQL Injection safe)
+* [ ] Copia de constraints
+* [ ] Configuración vía YAML
+* [ ] Logs y progreso
+
+---
+
+## 📘 Estado del proyecto
+
+* **Versión:** 0.3.0
+* **Estado:** Funcional / En evolución
+* **Enfoque:** Sincronización y migración de datos PostgreSQL
 
 ---
 
 ## 👨‍💻 Autor
 
 **Cristian Valderrama**
-📧 [cristianvalderrama1014@gmail.com](mailto:cristianvalderrama1014@gmail.com)
+📧 [cristian.vcabezas@hotmail.com](mailto:cristian.vcabezas@hotmail.com)
 🌐 [GitHub: bskcfv](https://github.com/bskcfv)
 
 
