@@ -113,19 +113,27 @@ node server.js
 ```
 project/
 ├── lib/
-│   ├── DbLocal.js          # Conexión PostgreSQL local
-│   ├── DbNeon.js           # Conexión PostgreSQL deploy
-│   └── DbMongo.js          # Conexión MongoDB Atlas
+│   ├── DbLocal.js              # Conexión PostgreSQL local
+│   ├── DbNeon.js               # Conexión PostgreSQL deploy
+│   └── DbMongo.js              # Conexión MongoDB Atlas
+│
+├── helpers/
+│   └── validateName.js         # Validación de identificadores SQL
+│
 ├── services/
-│   ├── connect.service.js  # postgres_fdw y conexión remota
-│   ├── migration.service.js
-│   └── mongo.migration.service.js
+│   ├── connect.service.js      # postgres_fdw y conexión remota
+│   ├── migration.service.js    # Sincronización RDB → RDB
+│   └── mongo.migration.service.js # Migración RDB → Mongo
+│
 ├── controllers/
 │   ├── connect.controller.js
 │   ├── migration.controller.js
 │   └── mongo.controller.js
-├── server.js
-└── .env
+│
+├── server.js                 
+├── .env
+└── README.md
+
 ```
 
 ---
@@ -204,7 +212,7 @@ project/
 ## 🗺️ Roadmap
 
 * [ ] CLI con flags (`sync --to mongo`)
-* [ ] Validación de nombres (SQL Injection safe)
+* [x] Validación de nombres (SQL Injection safe)
 * [ ] Copia de constraints
 * [ ] Configuración vía YAML
 * [ ] Logs y progreso
