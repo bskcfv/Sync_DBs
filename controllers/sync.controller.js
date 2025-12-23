@@ -1,4 +1,4 @@
-import { notify_action, trigger_notify, generateSuscription } from "../services/sync.service.js";
+import { notify_action, trigger_notify } from "../services/sync.service.js";
 import { getDeployTables } from "../services/migration.service.js";
 
 export const Sync = {
@@ -15,10 +15,7 @@ export const Sync = {
                 //Llamado de Servicio de Asignamiento de Trigger a tabla
                 await trigger_notify(table.tablename)
             }
-            //Llamado de Servicio para Generar Suscripcion y Seguimiento a los cambios (Primera Fase)
-            const message = await generateSuscription()
-            console.log(message)
-            console.log("Sincronizacion Exitosa")
+            return 'Triggers Creados Correctamente'
         } catch (error) {
             console.log(`Error en sysnc.controller.Suscriptor: ${error}`)
         }

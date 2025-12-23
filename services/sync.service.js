@@ -45,17 +45,22 @@ export const notify_action = async() => {
                     'table', TG_TABLE_NAME,
                     'data', row_to_json(OLD)
                 );
+                PERFORM pg_notify('table_changes', payload::TEXT);
+
+                RETURN OLD;
             ELSE
                 payload := json_build_object(
                     'operation', TG_OP,
                     'table', TG_TABLE_NAME,
                     'data', row_to_json(NEW)
                 );
-            END IF;
-
+            
             PERFORM pg_notify('table_changes', payload::TEXT);
 
-            RETURN NULL;
+            RETURN NEW;
+            END IF;
+
+
 
         END;
         $$ LANGUAGE plpgsql;
@@ -66,6 +71,8 @@ export const notify_action = async() => {
 export const trigger_notify = async(tablename) => {
     return await poolDeploy.query(
         `
+        DROP TRIGGER IF EXISTS t_notify_${tablename} ON ${tablename};
+
         CREATE OR REPLACE TRIGGER t_notify_${tablename}
         AFTER INSERT OR UPDATE OR DELETE ON ${tablename}
         FOR EACH ROW

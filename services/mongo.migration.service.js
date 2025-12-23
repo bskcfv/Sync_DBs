@@ -1,3 +1,4 @@
+import { handlerIds } from "../helper/handlerId.js";
 import ClientPromise from "../lib/DbMongo.js";
 
 //Instanciar Objeto de Clase clientPromise
@@ -64,8 +65,18 @@ export const insertTo = async(collection, data) => {
             console.log(`No hay Datos que insertar en ${collection}`)
             return;
         }
+
+        //Ajustar Formato de Entrada de Datos
+        /*
+            Se requiere que el id autogenerado de Mongo,
+            sea la misma PK de PostgreSql
+
+            Se Hace uso de Manejador de Ids
+        */
+        const docs = await handlerIds(collection, data)
+        
         //Funcion para Insertar Varios Documentos
-        await db.collection(collection).insertMany(data)
+        await db.collection(collection).insertMany(docs)
         //Visualizar Resultado
         console.log(`No° de Documentos Insertados: ${data.length}. En la Collecion: ${collection}`)
     } catch (error) {
