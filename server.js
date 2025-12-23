@@ -1,8 +1,7 @@
 import { migration } from "./controllers/migration.controller.js";
 import { Con } from "./controllers/connect.controller.js";
-import { Sync } from "./controllers/sync.controller.js";
 import { mongoController } from "./controllers/mongo.migration.controller.js";
-
+import { startSync } from "./services/mongo.sync.service.js";
 import pkg from 'terminal-kit';
 const {terminal} = pkg;
 
@@ -12,6 +11,7 @@ async function menu() {
         'Migrate RDB to Mongo Atlas',
         'What Data Import to Mongo Atlas',
         'What Table Import to Mongo Atlas',
+        'start synchronization',
         'exit'
     ]
 
@@ -71,6 +71,9 @@ async function menu() {
                 await mongoController.importSelected(listTables)
                 terminal.green("\nTablas Importadas Con exito\n")
                 setTimeout(menu, 5000);
+                break;
+            case 'start synchronization':
+                await startSync();
                 break;
 
             case 'exit':
